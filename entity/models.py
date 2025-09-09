@@ -17,24 +17,24 @@ class Student(Base):
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
     email: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
     phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
-    group_id: Mapped[int] = mapped_column(
-        ForeignKey("groups.id", ondelete="SET NULL"), nullable=False
+    group_id: Mapped[int | None] = mapped_column(
+        ForeignKey("groups.id", ondelete="SET NULL"), nullable=True, index=True
     )
 
-    group: Mapped["Group"] = relationship(back_populates="students")
+    group: Mapped["Group"] = relationship(back_populates="students", lazy="selectin")
     grades: Mapped[list["Grade"]] = relationship(
-        back_populates="student", cascade="all, delete-orphan"
+        back_populates="student", cascade="all, delete-orphan", lazy="selectin"
     )
 
     @hybrid_property
-    def full_name(self):
+    def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}"
 
     @full_name.expression
     def full_name(cls):
         return func.concat(cls.first_name, " ", cls.last_name)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Student(id={self.id}, first_name={self.first_name}, last_name={self.last_name}, email={self.email}, phone={self.phone})"
 
 
@@ -44,7 +44,7 @@ class Group(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
 
-    students: Mapped[list["Student"]] = relationship(back_populates="group")
+    students: Mapped[list["Student"]] = relationship(back_populates="group", lazy="selectin")
 
 
 class Teacher(Base):
@@ -56,7 +56,15 @@ class Teacher(Base):
     email: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
     phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
-    subjects: Mapped[list["Subject"]] = relationship(back_populates="teacher")
+    subjects: Mapped[list["Subject"]] = relationship(back_populates="teacher", lazy="selectin")
+
+    @hybrid_property
+    def full_name(self) -> str:
+        return f"{self.first_name} {self.second_name}"
+
+    @full_name.expression
+    def full_name(cls):
+        return func.concat(cls.first_name, " ", cls.second_name)
 
 
 class Subject(Base):
@@ -64,13 +72,13 @@ class Subject(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(250), nullable=False, unique=True)
-    teacher_id: Mapped[int] = mapped_column(
-        ForeignKey("teachers.id", ondelete="SET NULL"), nullable=False
+    teacher_id: Mapped[int | None] = mapped_column(
+        ForeignKey("teachers.id", ondelete="SET NULL"), nullable=True, index=True
     )
 
-    teacher: Mapped["Teacher"] = relationship(back_populates="subjects")
+    teacher: Mapped["Teacher"] = relationship(back_populates="subjects",lazy="selectin")
     grades: Mapped[list["Grade"]] = relationship(
-        back_populates="subject", cascade="all, delete-orphan"
+        back_populates="subject", cascade="all, delete-orphan", lazy="selectin"
     )
 
 
@@ -79,13 +87,13 @@ class Grade(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     student_id: Mapped[int] = mapped_column(
-        ForeignKey("students.id", ondelete="CASCADE"), nullable=False
+        ForeignKey("students.id", ondelete="CASCADE"), nullable=False, index=True
     )
     subject_id: Mapped[int] = mapped_column(
-        ForeignKey("subjects.id", ondelete="CASCADE"), nullable=False
+        ForeignKey("subjects.id", ondelete="CASCADE"), nullable=False, index=True
     )
     grade: Mapped[float] = mapped_column(Float, nullable=False)
     date_received: Mapped[datetime] = mapped_column(DateTime, default=func.now())
 
-    student: Mapped["Student"] = relationship(back_populates="grades")
-    subject: Mapped["Subject"] = relationship(back_populates="grades")
+    student: Mapped["Student"] = relationship(back_populates="grades", lazy="selectin")
+    subject: Mapped["Subject"] = relationship(back_populates="grades", lazy="selectin")

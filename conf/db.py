@@ -1,3 +1,8 @@
+"""
+database.py — модуль для підключення до бази даних PostgreSQL
+через SQLAlchemy. Використовує dotenv для завантаження секретів.
+"""
+
 import os
 
 from dotenv import load_dotenv
@@ -6,6 +11,7 @@ from sqlalchemy.orm import sessionmaker
 
 load_dotenv()
 
+# Конфігурація підключення з .env
 user = os.getenv("USER")
 password = os.getenv("PASSWORD")
 host = os.getenv("HOST")
